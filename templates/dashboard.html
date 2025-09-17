@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard | Bookmark Saver</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script>
+        function showView(viewName) {
+            document.querySelectorAll('.view-section').forEach(section => {
+                section.style.display = 'none';
+            });
+            const view = document.getElementById(viewName + '-view');
+            if (view) {
+                view.style.display = 'flex';
+            }
+            document.querySelectorAll('.nav-btn').forEach(button => {
+                button.classList.remove('active');
+            });
+            document.getElementById(viewName + '-btn').classList.add('active');
+        }
+
+        function showSharePopup(button) {
+            const url = button.getAttribute('data-url');
+            if (url) {
+                document.getElementById('share-url').value = url;
+                document.getElementById('share-popup').style.display = 'flex';
+            }
+        }
+
+        function hideSharePopup() {
+            document.getElementById('share-popup').style.display = 'none';
+        }
+
+        function copyToClipboard() {
+            const urlInput = document.getElementById('share-url');
+            urlInput.select();
+            document.execCommand('copy');
+            alert('URL copied to clipboard!');
+        }
+
+        function showFolderForm() {
+            document.getElementById('folder-create-form').style.display = 'flex';
+            document.getElementById('folders-list-view').style.display = 'none';
+        }
+
+        function hideFolderForm() {
+            document.getElementById('folder-create-form').style.display = 'none';
+            document.getElementById('folders-list-view').style.display = 'flex';
+        }
+
+        function showFolderContents(folderName) {
+            document.getElementById('folders-list-view').style.display = 'none';
+            const folderContent = document.getElementById(`folder-content-${folderName.replace(/ /g, '-')}`);
+            if (folderContent) {
+                folderContent.style.display = 'flex';
+            }
+        }
+
+        function hideFolderContents(folderName) {
+            const folderContent = document.getElementById(`folder-content-${folderName.replace(/ /g, '-')}`);
+            if (folderContent) {
+                folderContent.style.display = 'none';
+            }
+            document.getElementById('folders-list-view').style.display = 'flex';
+        }
+        
+        function toggleBookmarkSelection(button) {
+            button.classList.toggle('selected');
+            const url = button.getAttribute('data-url');
+            const hiddenInput = document.getElementById('folder-form-hidden-inputs');
+
+            let input = hiddenInput.querySelector(`input[value='${url}']`);
+            if (input) {
+                input.remove();
+            } else {
+                const newInput = document.createElement('input');
+                newInput.type = 'hidden';
+                newInput.name = 'bookmarks_to_add';
+                newInput.value = url;
+                hiddenInput.appendChild(newInput);
+            }
+            const icon = button.querySelector('.selection-icon');
+            if (icon) {
+                icon.classList.toggle('fas');
+                icon.classList.toggle('fa-check');
+            } else {
+                const newIcon = document.createElement('i');
+                newIcon.classList.add('selection-icon', 'fas', 'fa-check');
+                button.appendChild(newIcon);
+            }
+        }
+
+        function showEditPopup(button) {
+            const title = button.getAttribute('data-title');
+            const url = button.getAttribute('data-url');
+            document.getElementById('edit-title').value = title;
+            document.getElementById('edit-url').value = url;
+            document.getElementById('old-url').value = url;
+            document.getElementById('edit-popup').style.display = 'flex';
+        }
+
+        function hideEditPopup() {
+            document.getElementById('edit-popup').style.display = 'none';
+        }
+        
+        function showDeleteConfirmation(folderName) {
+            const confirmPopup = document.getElementById('delete-popup');
+            confirmPopup.style.display = 'flex';
+            document.getElementById('delete-folder-name').innerText = folderName;
+            const form = confirmPopup.querySelector('form');
+            form.action = `/delete_folder/${encodeURIComponent(folderName)}`;
+        }
+
+        function hideDeleteConfirmation() {
+            document.getElementById('delete-popup').style.display = 'none';
+        }
+
+        function showFavDeleteConfirmation(button) {
+            const url = button.getAttribute('data-url');
+            const name = button.getAttribute('data-title');
+            const confirmPopup = document.getElementById('fav-delete-popup');
+            confirmPopup.style.display = 'flex';
+            document.getElementById('fav-url-name').innerText = name;
+            const form = document.getElementById('fav-delete-form');
+            form.action = `/delete_favorite`;
+            form.querySelector('input[name="url"]').value = url;
+        }
+
+        function hideFavDeleteConfirmation() {
+            document.getElementById('fav-delete-popup').style.display = 'none';
+        }
+
+        function showFavPopup(message) {
+            const popup = document.getElementById('favorite-popup');
+            const text = document.getElementById('favorite-text');
+            text.innerText = message;
+            popup.style.display = 'flex';
+            setTimeout(() => {
+                popup.style.display = 'none';
+            }, 5000);
+        }
+        
+        function searchBookmarks() {
+            let input = document.getElementById("searchInput").value.toLowerCase();
+            let items = document.querySelectorAll(".search-result-item");
+            if (input === "") {
+                items.forEach(item => {
+                    item.style.display = "none";
+                });
+            } else {
+                items.forEach(item => {
+                    let text = item.innerText.toLowerCase();
+                    if (text.includes(input)) {
+                        item.style.display = "flex";
+                    } else {
+                        item.style.display = "none";
+                    }
+                });
+            }
+        }
+
+
+        document.addEventListener('DOMContentLoaded', () => {
+            showView('home');
+            const favoriteMsg = "{{ favorite_msg }}";
+            if (favoriteMsg && favoriteMsg !== 'None') {
+                showFavPopup(favoriteMsg);
+            }
+        });
+    </script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-brand">
+            Welcome, {{ name }}!
+        </div>
+        <div class="navbar-links">
+            <button id="home-btn" class="nav-btn active" onclick="showView('home')"><i class="fas fa-home icon-small"></i> Home</button>
+            <button id="search-btn" class="nav-btn" onclick="showView('search')"><i class="fas fa-search icon-small"></i> Search</button>
+            <button id="folders-btn" class="nav-btn" onclick="showView('folders')"><i class="fas fa-folder-open icon-small"></i> Folders</button>
+            <a href="/logout" class="btn-custom btn-logout">Logout</a>
+        </div>
+    </nav>
+
+    <main class="dashboard-grid">
+        <section id="home-view" class="view-section home-view">
+            <div class="box">
+                <i class="fas fa-plus-circle icon-big"></i>
+                <h2>Create Bookmark</h2>
+                <p>Add new bookmarks.</p>
+                <button class="btn-action btn-create" onclick="showView('create')">Create</button>
+            </div>
+            <div class="box">
+                <i class="fas fa-bookmark icon-big"></i>
+                <h2>View Bookmarks</h2>
+                <p>View your bookmarks.</p>
+                <button class="btn-action btn-view" onclick="showView('view-bookmarks')">View</button>
+            </div>
+            <div class="box">
+                <i class="fas fa-star icon-big"></i>
+                <h2>Favorite Bookmarks</h2>
+                <p>View your favorites.</p>
+                <button class="btn-action btn-fav" onclick="showView('favorites')">View</button>
+            </div>
+        </section>
+
+        <section id="create-view" class="view-section">
+            <div class="box create-form-box form-card">
+                <h2>Create Bookmark</h2>
+                <form method="POST" action="/add_bookmark">
+                    <label for="title-input">Bookmark Name</label>
+                    <input id="title-input" type="text" name="title" placeholder="e.g., Google" required>
+                    <label for="url-input">URL</label>
+                    <input id="url-input" type="url" name="url" placeholder="e.g., https://www.google.com" required>
+                    <div class="form-buttons">
+                        <button type="submit" class="btn-action btn-create">Create</button>
+                        <button type="button" class="btn-action btn-cancel" onclick="showView('home')">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <section id="view-bookmarks-view" class="view-section">
+            <div class="box list-box">
+                <div class="list-header">
+                    <h2>List of your bookmarks</h2>
+                    <button class="btn-action btn-back" onclick="showView('home')"><i class="fas fa-arrow-left"></i> Back</button>
+                </div>
+                {% if not bookmarks %}
+                    <p>No bookmarks added yet.</p>
+                {% else %}
+                    <div class="list-container">
+                        {% for b in bookmarks %}
+                            <div class="bookmark-item">
+                                <a href="{{ b['url'] }}" target="_blank" class="bookmark-link">{{ b['title'] }}</a>
+                                <div class="bookmark-actions button-grid">
+                                    <a href="{{ b['url'] }}" target="_blank" class="btn-action btn-view"><i class="fas fa-eye"></i> View</a>
+                                    <button onclick="showSharePopup(this)" class="btn-action btn-share" data-url="{{ b['url'] }}"><i class="fas fa-share-alt"></i> Share</button>
+                                    <form method="POST" action="/add_to_favorites" style="display:inline;">
+                                        <input type="hidden" name="url" value="{{ b['url'] }}">
+                                        {% if b['url'] in favorite_urls %}
+                                            <button type="submit" class="btn-action btn-fav favorite-active"><i class="fas fa-check"></i> Favorite</button>
+                                        {% else %}
+                                            <button type="submit" class="btn-action btn-fav"><i class="fas fa-star"></i> Favorite</button>
+                                        {% endif %}
+                                    </form>
+                                    <button onclick="showEditPopup(this)" class="btn-action btn-edit" data-title="{{ b['title'] }}" data-url="{{ b['url'] }}"><i class="fas fa-pencil-alt"></i> Edit</button>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+        </section>
+
+        <section id="favorites-view" class="view-section">
+            <div class="box list-box">
+                <div class="list-header">
+                    <h2>Favorite Bookmarks</h2>
+                    <button class="btn-action btn-back" onclick="showView('home')"><i class="fas fa-arrow-left"></i> Back</button>
+                </div>
+                {% if not favorites %}
+                    <p>No favorites added yet.</p>
+                {% else %}
+                    <div class="list-container">
+                        {% for b in favorites %}
+                            <div class="bookmark-item">
+                                <a href="{{ b['url'] }}" target="_blank" class="bookmark-link">{{ b['title'] }}</a>
+                                <div class="bookmark-actions">
+                                    <a href="{{ b['url'] }}" target="_blank" class="btn-action btn-view"><i class="fas fa-eye"></i> View</a>
+                                    <button onclick="showSharePopup(this)" class="btn-action btn-share" data-url="{{ b['url'] }}"><i class="fas fa-share-alt"></i> Share</button>
+                                    <button onclick="showFavDeleteConfirmation(this)" class="btn-action btn-delete" data-url="{{ b['url'] }}" data-title="{{ b['title'] }}">Delete</button>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+        </section>
+
+        <section id="search-view" class="view-section search-view-section">
+            <div class="search-input-container">
+                <input type="text" id="searchInput" onkeyup="searchBookmarks()" placeholder="Search your bookmarks..." class="rounded-search-bar">
+                <i class="fas fa-search search-icon"></i>
+            </div>
+            <div class="search-results list-container">
+                {% for b in bookmarks %}
+                    <div class="search-result-item bookmark-item" style="display: none;">
+                        <a href="{{ b['url'] }}" target="_blank" class="bookmark-link">{{ b['title'] }}</a>
+                        <div class="bookmark-actions">
+                            <a href="{{ b['url'] }}" target="_blank" class="btn-action btn-view search-view-btn-hover"><i class="fas fa-eye"></i> View</a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <section id="folders-view" class="view-section folders-view-section">
+            <div class="folder-controls">
+                <button onclick="showFolderForm()" class="btn-action btn-create"><i class="fas fa-plus-circle"></i> Create Folder</button>
+            </div>
+
+            <h2 class="centered-heading">Create Folder</h2>
+            <div id="folder-create-form" class="box form-card" style="display:none;">
+                <form method="POST" action="/add_folder">
+                    <label for="folder-name-input">Folder Name</label>
+                    <input id="folder-name-input" type="text" name="folder_name" required>
+                    <label>Select Bookmarks</label>
+                    <div class="bookmark-selection-buttons">
+                        {% for b in bookmarks %}
+                            <button type="button" class="btn-selection" onclick="toggleBookmarkSelection(this)" data-url="{{ b['url'] }}">{{ loop.index }}. {{ b['title'] }}</button>
+                        {% endfor %}
+                    </div>
+                    <div id="folder-form-hidden-inputs"></div>
+                    <button type="submit" class="btn-action btn-create">Create Folder</button>
+                    <button type="button" class="btn-action btn-cancel" onclick="hideFolderForm()">Cancel</button>
+                </form>
+            </div>
+            
+            <div class="folders-container list-box" id="folders-list-view">
+                {% for fname, fmarks in folders.items() %}
+                    <div class="folder-card box">
+                        <h3><i class="fas fa-folder icon-small"></i> {{ fname }} ({{ fmarks|length }})</h3>
+                        <div class="folder-actions">
+                            <button onclick="showFolderContents('{{ fname }}')" class="btn-action btn-view">View</button>
+                            <button onclick="showDeleteConfirmation('{{ fname }}')" class="btn-action btn-delete">Delete</button>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            {% for fname, fmarks in folders.items() %}
+                <div id="folder-content-{{ fname|replace(' ', '-') }}" class="view-section list-box" style="display: none;">
+                    <div class="list-header">
+                        <h2>Bookmarks in {{ fname }}</h2>
+                        <button class="btn-action btn-back" onclick="hideFolderContents('{{ fname }}')"><i class="fas fa-arrow-left"></i> Back</button>
+                    </div>
+                    <div class="list-container">
+                        {% for b in fmarks %}
+                            <div class="bookmark-item">
+                                <a href="{{ b['url'] }}" target="_blank">{{ b['title'] }}</a>
+                                <div class="bookmark-actions button-grid">
+                                    <a href="{{ b['url'] }}" target="_blank" class="btn-action btn-view"><i class="fas fa-eye"></i> View</a>
+                                    <button onclick="showSharePopup(this)" class="btn-action btn-share" data-url="{{ b['url'] }}"><i class="fas fa-share-alt"></i> Share</button>
+                                    <form method="POST" action="/add_to_favorites" style="display:inline;">
+                                        <input type="hidden" name="url" value="{{ b['url'] }}">
+                                        {% if b['url'] in favorite_urls %}
+                                            <button type="submit" class="btn-action btn-fav favorite-active"><i class="fas fa-check"></i> Favorite</button>
+                                        {% else %}
+                                            <button type="submit" class="btn-action btn-fav"><i class="fas fa-star"></i> Favorite</button>
+                                        {% endif %}
+                                    </form>
+                                    <button onclick="showEditPopup(this)" class="btn-action btn-edit" data-title="{{ b['title'] }}" data-url="{{ b['url'] }}"><i class="fas fa-pencil-alt"></i> Edit</button>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endfor %}
+        </section>
+    </main>
+
+    <div id="share-popup" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <h2>Share Bookmark</h2>
+            <div class="share-box">
+                <input type="text" id="share-url" readonly>
+                <button onclick="copyToClipboard()" class="btn-action btn-copy"><i class="fas fa-copy"></i> Copy</button>
+            </div>
+            <button onclick="hideSharePopup()" class="btn-action btn-share-close">Close</button>
+        </div>
+    </div>
+
+    <div id="edit-popup" class="modal-overlay" style="display: none;">
+        <div class="modal-content form-card">
+            <h2>Edit Bookmark</h2>
+            <form method="POST" action="/edit_bookmark">
+                <input type="hidden" id="old-url" name="old_url">
+                <label for="edit-title">Bookmark Name</label>
+                <input type="text" id="edit-title" name="new_title" required>
+                <label for="edit-url">URL</label>
+                <input type="url" id="edit-url" name="new_url" required>
+                <button type="submit" class="btn-action btn-save">Save</button>
+                <button type="button" class="btn-action btn-cancel" onclick="hideEditPopup()">Cancel</button>
+            </form>
+        </div>
+    </div>
+    
+    <div id="favorite-popup" class="modal-overlay popup-msg" style="display: none;">
+        <div class="modal-content popup-content">
+            <p id="favorite-text"></p>
+        </div>
+    </div>
+
+    <div id="delete-popup" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <p>Delete folder?</p>
+            <div class="confirm-actions">
+                <form method="POST" action="">
+                    <button type="submit" class="btn-action btn-delete-confirm">Delete</button>
+                </form>
+                <button onclick="hideDeleteConfirmation()" class="btn-action btn-cancel-delete">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="fav-delete-popup" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <p>Do you want to delete <span id="fav-url-name"></span>?</p>
+            <div class="confirm-actions">
+                <form id="fav-delete-form" method="POST" action="">
+                    <input type="hidden" name="url">
+                    <button type="submit" class="btn-action btn-delete-confirm">Delete</button>
+                    <button type="button" onclick="hideFavDeleteConfirmation()" class="btn-action btn-cancel-delete">Cancel</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

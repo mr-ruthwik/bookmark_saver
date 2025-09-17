@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Welcome | Bookmark Saver</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <i class="fas fa-bookmark icon-large"></i> Bookmark Saver - Unique website to save and organise your urls
+        </div>
+        <div class="navbar-links">
+            <a href="/signup" class="btn-custom btn-signup">Sign Up</a>
+            <a href="/signin" class="btn-custom btn-signin">Sign In</a>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <div class="welcome-heading">
+            <h1 class="short-heading">Take an overview of our features!</h1>
+        </div>
+        <div class="container welcome-container">
+            <div class="box feature-box">
+                <i class="fas fa-plus-circle icon-big"></i>
+                <h2>Create Bookmarks</h2>
+                <p>Add and organize your bookmarks easily.</p>
+            </div>
+            <div class="box feature-box">
+                <i class="fas fa-bookmark icon-big"></i>
+                <h2>View Bookmarks</h2>
+                <p>See all your saved bookmarks in one place.</p>
+            </div>
+            <div class="box feature-box">
+                <i class="fas fa-pencil-alt icon-big"></i>
+                <h2>Edit Bookmark</h2>
+                <p>Quickly edit your bookmarks.</p>
+            </div>
+            <div class="box feature-box">
+                <i class="fas fa-star icon-big"></i>
+                <h2>Favorite Bookmarks</h2>
+                <p>Bookmark your most-used links.</p>
+            </div>
+            <div class="box feature-box">
+                <i class="fas fa-search icon-big"></i>
+                <h2>Search for Bookmarks</h2>
+                <p>Find your bookmarks easily.</p>
+            </div>
+            <div class="box feature-box">
+                <i class="fas fa-share-alt icon-big"></i>
+                <h2>Share Bookmarks</h2>
+                <p>Copy and share your URLs.</p>
+            </div>
+            <div class="box feature-box">
+                <i class="fas fa-folder-open icon-big"></i>
+                <h2>Create Folders</h2>
+                <p>Organize bookmarks into folders.</p>
+            </div>
+            <div class="box feature-box">
+                <i class="fas fa-key icon-big"></i>
+                <h2>Secure your Bookmark</h2>
+                <p>Save bookmarks permanently with credentials.</p>
+            </div>
+        </div>
+    </main>
+</body>
+</html>
